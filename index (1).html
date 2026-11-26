@@ -1,0 +1,2024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0F2C59" />
+  <meta name="description" content="SIGAP MDJLO — Sistema de Asistencia Biométrica de Practicantes. Sub Gerencia de Recursos Humanos, Municipalidad Distrital de José Leonardo Ortiz." />
+  <title>SIGAP MDJLO | Control de Asistencia de Practicantes</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mdjlo: {
+              navy: '#0F2C59',
+              royal: '#1E3A8A',
+              gold: '#B45309',
+              amber: '#D97706',
+              green: '#047857',
+              surface: '#F1F5F9'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #F1F5F9;
+      color: #0F172A;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #E2E8F0; }
+    ::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 999px; }
+
+    .mirror-video { transform: scaleX(-1); }
+
+    .fp-active {
+      box-shadow: 0 0 0 6px rgba(4, 120, 87, 0.18);
+    }
+
+    .modal-backdrop {
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      #app-shell, #toast-container, #kiosk-floating-bar, .no-print { display: none !important; }
+      #print-document-container {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-mdjlo-surface text-slate-900">
+
+  <div id="app-shell" class="min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header id="main-navbar" class="sticky top-0 z-40 bg-mdjlo-navy text-white border-b border-mdjlo-gold/80 shadow-sm">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex items-center justify-between h-14 gap-4">
+
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 40 40" class="w-6 h-6" aria-hidden="true">
+                <rect x="4" y="6" width="32" height="28" rx="3" fill="none" stroke="#D97706" stroke-width="2"/>
+                <path d="M12 20h16M20 12v16" stroke="#FBBF24" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-sm tracking-tight">SIGAP MDJLO</span>
+                <span class="hidden sm:inline text-[10px] font-medium uppercase tracking-wide text-amber-300/90 bg-white/10 px-1.5 py-0.5 rounded">
+                  José Leonardo Ortiz
+                </span>
+              </div>
+              <p class="text-[11px] text-blue-200/80 truncate leading-tight">
+                Sub Gerencia de Recursos Humanos
+              </p>
+            </div>
+          </div>
+
+          <nav class="flex items-center bg-black/20 p-0.5 rounded-lg">
+            <button id="nav-terminal" onclick="switchMainView('terminal')"
+              class="px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-amber text-white transition-colors">
+              Terminal
+            </button>
+            <button id="nav-admin" onclick="switchMainView('admin')"
+              class="px-3 py-1.5 rounded-md text-xs font-medium text-blue-200 hover:text-white transition-colors">
+              Administración
+            </button>
+          </nav>
+
+          <div class="flex items-center gap-1.5">
+            <button id="btn-voice-toggle" onclick="toggleVoiceFeedback()" title="Voz"
+              class="w-8 h-8 rounded-md bg-white/10 hover:bg-white/15 text-amber-300 flex items-center justify-center transition-colors">
+              <i id="voice-icon" class="fa-solid fa-volume-high text-xs"></i>
+            </button>
+            <button id="btn-pwa-install" onclick="triggerPwaInstall()"
+              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white/10 hover:bg-white/15 text-xs font-medium text-blue-100 transition-colors">
+              <i class="fa-solid fa-download text-[10px] text-amber-300"></i>
+              Instalar
+            </button>
+            <button onclick="toggleKioskMode(true)"
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-mdjlo-green hover:bg-emerald-700 text-white text-xs font-semibold transition-colors">
+              <i class="fa-solid fa-expand text-[10px]"></i>
+              <span class="hidden sm:inline">Kiosco</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Kiosk bar -->
+    <div id="kiosk-floating-bar" class="hidden fixed top-3 right-3 z-50 flex items-center gap-2 bg-mdjlo-navy/95 text-white px-3 py-1.5 rounded-full border border-mdjlo-amber/60 shadow-lg">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span class="text-[11px] font-medium text-amber-200">Modo kiosco</span>
+      <button onclick="toggleKioskMode(false)"
+        class="ml-1 px-2 py-0.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold">
+        Salir
+      </button>
+    </div>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-5">
+
+      <!-- ===================== TERMINAL ===================== -->
+      <section id="view-terminal" class="space-y-5">
+
+        <!-- Clock bar -->
+        <div class="bg-mdjlo-navy rounded-xl px-4 py-3.5 text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-amber-300">
+              <i class="fa-regular fa-clock text-lg"></i>
+            </div>
+            <div>
+              <p class="text-[10px] uppercase tracking-wide text-blue-300 font-medium">Hora oficial (Perú)</p>
+              <div class="flex items-baseline gap-1.5">
+                <span id="live-clock" class="font-mono text-2xl font-semibold tracking-tight">08:00:00</span>
+                <span id="live-ampm" class="text-xs font-medium text-amber-300 uppercase">AM</span>
+              </div>
+              <p id="live-date" class="text-[11px] text-blue-200 capitalize">—</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="bg-black/20 rounded-lg px-3 py-1.5">
+              <p class="text-[10px] text-blue-300">Punto de marcación</p>
+              <p id="terminal-sede-name" class="text-xs font-semibold">Palacio Municipal — Recepción</p>
+            </div>
+            <div class="bg-emerald-900/40 rounded-lg px-3 py-1.5">
+              <p class="text-[10px] text-emerald-300">Tolerancia</p>
+              <p id="terminal-shift-status" class="text-xs font-semibold text-emerald-200">10 minutos</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+          <!-- Left: identification -->
+          <div class="lg:col-span-5 space-y-4">
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  1. Identificación
+                </h2>
+                <span class="text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Padrón activo</span>
+              </div>
+
+              <div class="space-y-2.5">
+                <div class="relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                  <input type="text" id="terminal-dni-search"
+                    placeholder="DNI o apellidos / nombres"
+                    oninput="filterTerminalInterns(this.value)"
+                    class="w-full pl-9 pr-8 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30 focus:border-mdjlo-navy" />
+                  <button type="button" onclick="clearTerminalSearch()"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <select id="terminal-intern-select" onchange="handleSelectIntern(this.value)"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30">
+                </select>
+              </div>
+
+              <div id="selected-intern-card" class="mt-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+                <!-- dynamic -->
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  2. Tipo de marcación
+                </h2>
+                <button onclick="setAttendanceMode('auto')" id="btn-mode-auto"
+                  class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Automático
+                </button>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5">
+                <button id="btn-type-entrada" onclick="setAttendanceMode('entrada')"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold transition-colors">
+                  <i class="fa-solid fa-right-to-bracket text-emerald-600"></i>
+                  <span class="text-sm">Entrada</span>
+                </button>
+                <button id="btn-type-salida" onclick="setAttendanceMode('salida')"
+                  class="flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-semibold hover:border-slate-300 transition-colors">
+                  <i class="fa-solid fa-right-from-bracket" id="icon-wrap-salida"></i>
+                  <span class="text-sm">Salida</span>
+                </button>
+              </div>
+              <p id="smart-mode-explanation" class="mt-2.5 text-[11px] text-slate-500 flex items-start gap-1.5">
+                <i class="fa-solid fa-circle-info text-slate-400 mt-0.5"></i>
+                <span>Se sugiere según el historial del día.</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Right: biometric -->
+          <div class="lg:col-span-7">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 mb-4">
+                <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  3. Verificación biométrica
+                </h2>
+                <div class="inline-flex bg-slate-100 p-0.5 rounded-lg">
+                  <button id="tab-bio-facial" onclick="switchBiometricMethod('facial')"
+                    class="px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-navy text-white transition-colors">
+                    <i class="fa-solid fa-face-viewfinder mr-1"></i> Facial
+                  </button>
+                  <button id="tab-bio-huella" onclick="switchBiometricMethod('huella')"
+                    class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                    <i class="fa-solid fa-fingerprint mr-1"></i> Huella
+                  </button>
+                </div>
+              </div>
+
+              <!-- Facial panel -->
+              <div id="panel-bio-facial" class="space-y-3">
+                <div class="relative w-full aspect-[16/10] bg-slate-900 rounded-lg overflow-hidden border border-slate-700 flex items-center justify-center">
+                  <video id="webcam-video" autoplay playsinline muted class="hidden w-full h-full object-cover mirror-video"></video>
+
+                  <div id="simulated-camera-feed" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
+                    <div class="w-28 h-36 rounded-full border-2 border-dashed border-emerald-500/50 flex items-center justify-center">
+                      <i class="fa-solid fa-user text-4xl text-emerald-500/40"></i>
+                    </div>
+                    <span id="camera-mode-badge" class="mt-3 text-[10px] font-medium text-slate-400 tracking-wide">
+                      Cámara no conectada — modo simulación
+                    </span>
+                  </div>
+
+                  <div class="pointer-events-none absolute inset-3">
+                    <div class="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-amber-400/80 rounded-tl"></div>
+                    <div class="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-amber-400/80 rounded-tr"></div>
+                    <div class="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-emerald-400/80 rounded-bl"></div>
+                    <div class="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-emerald-400/80 rounded-br"></div>
+                    <div class="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-emerald-300/90 bg-black/50 px-2 py-0.5 rounded">
+                      <span id="facial-hud-status">Listo</span>
+                      <span id="facial-hud-confidence" class="ml-2 text-amber-300">—</span>
+                    </div>
+                  </div>
+
+                  <div id="facial-progress-overlay" class="hidden absolute bottom-3 left-3 right-3 bg-black/80 p-2.5 rounded-lg">
+                    <div class="flex items-center justify-between text-[11px] text-white mb-1">
+                      <span id="facial-progress-label">Analizando…</span>
+                      <span id="facial-progress-pct" class="font-mono text-amber-300">0%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div id="facial-progress-bar" class="h-full bg-emerald-500 transition-all duration-150" style="width:0%"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <button id="btn-start-facial-scan" onclick="startFacialVerification()"
+                    class="flex-1 py-2.5 px-4 rounded-lg bg-mdjlo-green hover:bg-emerald-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-face-viewfinder"></i>
+                    Verificar y marcar
+                  </button>
+                  <button id="btn-toggle-webcam" onclick="initRealWebcam()"
+                    class="py-2.5 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-video text-slate-500"></i>
+                    <span id="webcam-btn-label">Usar cámara</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Fingerprint panel -->
+              <div id="panel-bio-huella" class="hidden space-y-4">
+                <div class="bg-slate-50 rounded-lg p-6 text-center border border-slate-200">
+                  <p id="fp-instruction-title" class="text-sm font-semibold text-slate-800">
+                    Coloque el dedo sobre el sensor
+                  </p>
+                  <p id="fp-instruction-sub" class="text-xs text-slate-500 mt-0.5">
+                    Mantenga presionado o haga clic para validar
+                  </p>
+
+                  <div class="my-6 flex items-center justify-center">
+                    <button id="fp-touch-pad" type="button"
+                      onmousedown="beginFingerprintHold()"
+                      onmouseup="endFingerprintHold()"
+                      onmouseleave="cancelFingerprintHold()"
+                      ontouchstart="beginFingerprintHold(event)"
+                      ontouchend="endFingerprintHold()"
+                      onclick="triggerFingerprintClick()"
+                      class="relative w-28 h-28 rounded-full bg-white border-2 border-slate-300 hover:border-emerald-500 flex items-center justify-center transition-all select-none focus:outline-none"
+                      aria-label="Sensor de huella">
+                      <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="52" fill="none" stroke="#E2E8F0" stroke-width="4" />
+                        <circle id="fp-progress-circle" cx="60" cy="60" r="52" fill="none" stroke="#047857" stroke-width="4"
+                          stroke-linecap="round" stroke-dasharray="326.726" stroke-dashoffset="326.726" class="transition-all duration-75" />
+                      </svg>
+                      <i id="fp-sensor-icon" class="fa-solid fa-fingerprint text-3xl text-slate-400 transition-colors"></i>
+                    </button>
+                  </div>
+
+                  <div class="inline-flex items-center gap-3 text-xs font-mono bg-white border border-slate-200 rounded-lg px-3 py-1.5">
+                    <span id="fp-status-text" class="text-slate-500">Sensor listo</span>
+                    <span id="fp-pct-text" class="text-emerald-700 font-semibold">0%</span>
+                  </div>
+                </div>
+
+                <button onclick="triggerNativeWebAuthn()"
+                  class="w-full py-2.5 px-4 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium flex items-center justify-center gap-2 transition-colors">
+                  <i class="fa-solid fa-shield-halved text-slate-500"></i>
+                  Usar lector del dispositivo (Windows Hello / Touch ID)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== ADMIN ===================== -->
+      <section id="view-admin" class="hidden space-y-5">
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm px-4 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-wide text-mdjlo-navy">Sub Gerencia de Recursos Humanos</p>
+            <h1 class="text-base font-semibold text-slate-900">Control de practicantes</h1>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="openPrintPreviewModal()"
+              class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-print text-slate-500"></i> Imprimir
+            </button>
+            <button onclick="exportAttendanceCSV()"
+              class="px-3 py-1.5 rounded-lg bg-mdjlo-navy hover:bg-mdjlo-royal text-white text-xs font-medium flex items-center gap-1.5 transition-colors">
+              <i class="fa-solid fa-file-csv"></i> Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="text-[11px] font-medium text-slate-500">Practicantes</p>
+            <p id="kpi-total-interns" class="text-2xl font-semibold text-mdjlo-navy mt-0.5">0</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="text-[11px] font-medium text-slate-500">Asistencias hoy</p>
+            <p id="kpi-present-today" class="text-2xl font-semibold text-emerald-700 mt-0.5">0</p>
+            <p id="kpi-active-shift-sub" class="text-[11px] text-slate-500 mt-0.5">0 en turno</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="text-[11px] font-medium text-slate-500">Tardanzas hoy</p>
+            <p id="kpi-tardies-today" class="text-2xl font-semibold text-amber-700 mt-0.5">0</p>
+            <p id="kpi-tolerance-sub" class="text-[11px] text-slate-500 mt-0.5">Tolerancia: 10 min</p>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4">
+            <p class="text-[11px] font-medium text-slate-500">Puntualidad</p>
+            <p id="kpi-punctuality-rate" class="text-2xl font-semibold text-slate-800 mt-0.5">100%</p>
+          </div>
+        </div>
+
+        <!-- Subnav -->
+        <div class="bg-white rounded-xl border border-slate-200 p-1.5 flex flex-wrap items-center gap-1">
+          <button id="subtab-logs" onclick="switchAdminSubtab('logs')"
+            class="px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-navy text-white transition-colors">
+            Registro
+          </button>
+          <button id="subtab-interns" onclick="switchAdminSubtab('interns')"
+            class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+            Practicantes
+          </button>
+          <button id="subtab-settings" onclick="switchAdminSubtab('settings')"
+            class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+            Configuración
+          </button>
+          <button onclick="openInternModal()"
+            class="ml-auto px-3 py-1.5 rounded-md bg-mdjlo-green hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors">
+            <i class="fa-solid fa-plus text-[10px]"></i> Nuevo
+          </button>
+        </div>
+
+        <!-- Logs panel -->
+        <div id="admin-panel-logs" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 class="text-sm font-semibold text-slate-800">Asistencias biométricas</h2>
+              <div class="flex gap-1.5">
+                <button onclick="simulateRandomCheckIn()"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors">
+                  Simular
+                </button>
+                <button onclick="resetAttendanceFilters()"
+                  class="px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors">
+                  Limpiar filtros
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                <input type="text" id="filter-search" oninput="renderAttendanceTable()"
+                  placeholder="DNI o nombre"
+                  class="w-full pl-7 pr-2.5 py-1.5 rounded-md border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-mdjlo-navy/40" />
+              </div>
+              <select id="filter-area" onchange="renderAttendanceTable()"
+                class="w-full px-2.5 py-1.5 rounded-md border border-slate-200 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-mdjlo-navy/40">
+                <option value="ALL">Todas las áreas</option>
+                <option value="Sub Gerencia de Recursos Humanos">RR.HH.</option>
+                <option value="Sub Gerencia de Tecnologías de la Información y Sistemas">TI y Sistemas</option>
+                <option value="Mesa de Partes y Trámite Documentario">Mesa de Partes</option>
+                <option value="Gerencia Municipal">Gerencia Municipal</option>
+                <option value="Gerencia de Administración Tributaria">Adm. Tributaria</option>
+                <option value="Sub Gerencia de Obras y Desarrollo Urbano">Obras</option>
+                <option value="Sub Gerencia de Promoción Empresarial y Empleo MDJLO">Promoción Empresarial</option>
+                <option value="Seguridad Ciudadana">Seguridad Ciudadana</option>
+              </select>
+              <select id="filter-status" onchange="renderAttendanceTable()"
+                class="w-full px-2.5 py-1.5 rounded-md border border-slate-200 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-mdjlo-navy/40">
+                <option value="ALL">Todos los estados</option>
+                <option value="Puntual">Puntual</option>
+                <option value="Tardanza">Tardanza</option>
+                <option value="Salida">Salida registrada</option>
+                <option value="En curso">En turno</option>
+              </select>
+              <input type="date" id="filter-date" onchange="renderAttendanceTable()"
+                class="w-full px-2.5 py-1.5 rounded-md border border-slate-200 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-mdjlo-navy/40" />
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-100 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <th class="py-2.5 px-3">Practicante</th>
+                  <th class="py-2.5 px-3">DNI</th>
+                  <th class="py-2.5 px-3">Área</th>
+                  <th class="py-2.5 px-3">Fecha</th>
+                  <th class="py-2.5 px-3">Entrada</th>
+                  <th class="py-2.5 px-3">Salida</th>
+                  <th class="py-2.5 px-3">Horas</th>
+                  <th class="py-2.5 px-3">Método</th>
+                  <th class="py-2.5 px-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-table-body" class="divide-y divide-slate-50">
+              </tbody>
+            </table>
+          </div>
+          <div id="attendance-empty-state" class="hidden py-10 text-center">
+            <p class="text-sm font-medium text-slate-600">Sin registros</p>
+            <p class="text-xs text-slate-400 mt-0.5">Ajuste los filtros o realice una marcación.</p>
+          </div>
+        </div>
+
+        <!-- Interns panel -->
+        <div id="admin-panel-interns" class="hidden space-y-3">
+          <div class="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold text-slate-800">Padrón de practicantes</h2>
+              <p class="text-xs text-slate-500">Datos académicos y área asignada</p>
+            </div>
+            <button onclick="openInternModal()"
+              class="px-3 py-1.5 rounded-md bg-mdjlo-navy hover:bg-mdjlo-royal text-white text-xs font-semibold transition-colors">
+              Nuevo practicante
+            </button>
+          </div>
+          <div id="interns-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          </div>
+        </div>
+
+        <!-- Settings panel -->
+        <div id="admin-panel-settings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-4">
+            <h3 class="text-sm font-semibold text-slate-800">Reglas de asistencia</h3>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Sede / punto de marcación</label>
+              <input type="text" id="setting-sede-name"
+                class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Tolerancia de entrada (minutos)</label>
+              <input type="number" id="setting-tolerance-minutes" min="0" max="60"
+                class="w-24 px-3 py-2 rounded-lg border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+            </div>
+            <div class="p-3 rounded-lg bg-slate-50 border border-slate-100 text-xs space-y-1.5">
+              <p class="font-medium text-slate-700">Turnos vigentes</p>
+              <div class="grid grid-cols-3 gap-2 font-mono text-[11px] text-slate-600">
+                <div class="bg-white rounded border border-slate-100 p-1.5 text-center">Mañana<br>08:00–14:00</div>
+                <div class="bg-white rounded border border-slate-100 p-1.5 text-center">Tarde<br>13:00–17:00</div>
+                <div class="bg-white rounded border border-slate-100 p-1.5 text-center">Completo<br>08:00–17:00</div>
+              </div>
+            </div>
+            <button onclick="saveSystemSettings()"
+              class="w-full py-2 rounded-lg bg-mdjlo-green hover:bg-emerald-700 text-white text-sm font-semibold transition-colors">
+              Guardar
+            </button>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+            <h3 class="text-sm font-semibold text-slate-800">Reportes y respaldo</h3>
+            <button onclick="openPrintPreviewModal()"
+              class="w-full py-2.5 px-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left text-xs font-medium text-slate-700 flex items-center justify-between transition-colors">
+              <span><i class="fa-solid fa-print text-slate-500 mr-2"></i>Vista de impresión / acta</span>
+              <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
+            </button>
+            <button onclick="exportAttendanceCSV()"
+              class="w-full py-2.5 px-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left text-xs font-medium text-slate-700 flex items-center justify-between transition-colors">
+              <span><i class="fa-solid fa-file-csv text-slate-500 mr-2"></i>Exportar CSV</span>
+              <i class="fa-solid fa-chevron-right text-slate-400 text-[10px]"></i>
+            </button>
+            <button onclick="confirmResetDemoData()"
+              class="w-full py-2.5 px-3 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-left text-xs font-medium text-rose-700 flex items-center justify-between transition-colors">
+              <span><i class="fa-solid fa-rotate-left mr-2"></i>Restaurar datos de prueba</span>
+              <i class="fa-solid fa-triangle-exclamation text-rose-500 text-[10px]"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="border-t border-slate-200 bg-white py-3 px-4 text-center text-[11px] text-slate-500">
+      <p class="font-medium text-slate-600">Municipalidad Distrital de José Leonardo Ortiz — Chiclayo, Lambayeque</p>
+      <p class="mt-0.5">SIGAP MDJLO · Sub Gerencia de Recursos Humanos</p>
+    </footer>
+  </div>
+
+  <!-- Confirmation modal -->
+  <div id="confirmation-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 modal-backdrop flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-xl max-w-sm w-full shadow-xl border border-slate-200 overflow-hidden">
+      <div id="confirm-modal-banner" class="bg-emerald-600 p-5 text-center text-white">
+        <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+          <i id="confirm-modal-icon" class="fa-solid fa-check text-xl"></i>
+        </div>
+        <h3 id="confirm-modal-title" class="text-base font-semibold">Entrada registrada</h3>
+        <p id="confirm-modal-subtitle" class="text-[11px] text-white/80 mt-0.5">Identidad verificada</p>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <div id="confirm-avatar" class="w-10 h-10 rounded-lg bg-mdjlo-navy text-amber-300 font-semibold flex items-center justify-center text-sm shrink-0">CM</div>
+            <div class="min-w-0">
+              <p id="confirm-name" class="text-sm font-semibold text-slate-900 truncate">—</p>
+              <p id="confirm-dni" class="text-xs font-mono text-slate-500">DNI: —</p>
+            </div>
+          </div>
+          <div class="mt-2 pt-2 border-t border-slate-100 text-[11px] space-y-0.5">
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Área</span><span id="confirm-area" class="font-medium text-right">—</span></div>
+            <div class="flex justify-between gap-2"><span class="text-slate-500">Institución</span><span id="confirm-institution" class="font-medium text-right">—</span></div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="text-slate-400 block">Hora</span>
+            <span id="confirm-time" class="font-mono font-semibold text-slate-800">—</span>
+          </div>
+          <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="text-slate-400 block">Estado</span>
+            <span id="confirm-status-badge" class="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">Puntual</span>
+          </div>
+          <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="text-slate-400 block">Método</span>
+            <span id="confirm-method" class="font-medium text-slate-800">—</span>
+          </div>
+          <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+            <span class="text-slate-400 block">Coincidencia</span>
+            <span id="confirm-accuracy" class="font-mono font-semibold text-emerald-700">—</span>
+          </div>
+        </div>
+        <button onclick="closeConfirmationModal()"
+          class="w-full py-2.5 rounded-lg bg-mdjlo-navy hover:bg-mdjlo-royal text-white text-sm font-semibold transition-colors">
+          Aceptar (<span id="confirm-countdown">6</span>s)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Intern form modal -->
+  <div id="intern-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 modal-backdrop flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white rounded-xl max-w-lg w-full shadow-xl border border-slate-200 my-auto">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 id="intern-modal-title" class="text-sm font-semibold text-slate-900">Registrar practicante</h3>
+          <p class="text-[11px] text-slate-500">Sub Gerencia de Recursos Humanos</p>
+        </div>
+        <button onclick="closeInternModal()" class="w-7 h-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="intern-form" onsubmit="saveInternForm(event)" class="p-4 space-y-3">
+        <input type="hidden" id="form-intern-id" />
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">DNI *</label>
+            <input type="text" id="form-intern-dni" required pattern="\d{8}" maxlength="8" placeholder="74829104"
+              class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Apellidos y nombres *</label>
+            <input type="text" id="form-intern-name" required placeholder="Mendoza Salazar, Carlos Eduardo"
+              class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Institución *</label>
+            <input type="text" id="form-intern-institution" list="institutions-list" required
+              class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+            <datalist id="institutions-list">
+              <option value="UNPRG — Univ. Nacional Pedro Ruiz Gallo"></option>
+              <option value="USAT — Univ. Católica Santo Toribio de Mogrovejo"></option>
+              <option value="SENATI — Zonal Lambayeque"></option>
+              <option value="UCV — Univ. César Vallejo (Chiclayo)"></option>
+              <option value="UTP — Univ. Tecnológica del Perú (Chiclayo)"></option>
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Carrera / modalidad *</label>
+            <input type="text" id="form-intern-career" required
+              class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Área asignada *</label>
+          <select id="form-intern-area" required
+            class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30">
+            <option value="Sub Gerencia de Recursos Humanos">Sub Gerencia de Recursos Humanos</option>
+            <option value="Sub Gerencia de Tecnologías de la Información y Sistemas">Sub Gerencia de Tecnologías de la Información y Sistemas</option>
+            <option value="Mesa de Partes y Trámite Documentario">Mesa de Partes y Trámite Documentario</option>
+            <option value="Gerencia Municipal">Gerencia Municipal</option>
+            <option value="Gerencia de Administración Tributaria">Gerencia de Administración Tributaria</option>
+            <option value="Sub Gerencia de Obras y Desarrollo Urbano">Sub Gerencia de Obras y Desarrollo Urbano</option>
+            <option value="Sub Gerencia de Promoción Empresarial y Empleo MDJLO">Sub Gerencia de Promoción Empresarial y Empleo MDJLO</option>
+            <option value="Seguridad Ciudadana">Seguridad Ciudadana</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-medium text-slate-600 mb-0.5">Turno *</label>
+          <select id="form-intern-shift" required
+            class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-mdjlo-navy/30">
+            <option value="Mañana|08:00|14:00">Mañana (08:00 – 14:00)</option>
+            <option value="Tarde|13:00|17:00">Tarde (13:00 – 17:00)</option>
+            <option value="Completo|08:00|17:00">Completo (08:00 – 17:00)</option>
+          </select>
+        </div>
+        <div class="p-3 rounded-lg bg-slate-50 border border-slate-100">
+          <p class="text-[11px] font-medium text-slate-600 mb-2">Enrolamiento biométrico</p>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btn-enroll-face" onclick="simulateBiometricEnrollment('face')"
+              class="p-2 rounded-lg border border-slate-200 bg-white text-left text-xs hover:bg-slate-50 transition-colors flex items-center justify-between">
+              <span><i class="fa-solid fa-face-viewfinder text-emerald-600 mr-1.5"></i><span id="enroll-face-title">Enrolar rostro</span></span>
+              <i id="enroll-face-check" class="fa-regular fa-circle text-slate-300"></i>
+            </button>
+            <button type="button" id="btn-enroll-fp" onclick="simulateBiometricEnrollment('fp')"
+              class="p-2 rounded-lg border border-slate-200 bg-white text-left text-xs hover:bg-slate-50 transition-colors flex items-center justify-between">
+              <span><i class="fa-solid fa-fingerprint text-mdjlo-navy mr-1.5"></i><span id="enroll-fp-title">Registrar huella</span></span>
+              <i id="enroll-fp-check" class="fa-regular fa-circle text-slate-300"></i>
+            </button>
+          </div>
+          <p id="enroll-face-status" class="hidden"></p>
+          <p id="enroll-fp-status" class="hidden"></p>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeInternModal()"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-4 py-1.5 rounded-lg bg-mdjlo-navy hover:bg-mdjlo-royal text-white text-xs font-semibold">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Print preview modal -->
+  <div id="print-preview-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 modal-backdrop flex items-center justify-center p-4 overflow-y-auto no-print">
+    <div class="bg-white rounded-xl max-w-3xl w-full shadow-xl border border-slate-200 my-auto flex flex-col max-h-[90vh]">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900">Vista de impresión</h3>
+          <p class="text-[11px] text-slate-500">Formato A4 — acta de conformidad</p>
+        </div>
+        <div class="flex gap-1.5">
+          <button onclick="executeOfficialPrint()"
+            class="px-3 py-1.5 rounded-lg bg-mdjlo-green hover:bg-emerald-700 text-white text-xs font-semibold">
+            Imprimir
+          </button>
+          <button onclick="closePrintPreviewModal()"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+            Cerrar
+          </button>
+        </div>
+      </div>
+      <div id="print-preview-body" class="p-6 overflow-y-auto bg-white text-slate-900 text-sm"></div>
+    </div>
+  </div>
+
+  <div id="print-document-container" class="hidden"></div>
+
+  <!-- Custom dialog -->
+  <div id="custom-dialog-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 modal-backdrop flex items-center justify-center p-4 no-print">
+    <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-xl border border-slate-200 space-y-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="dialog-title" class="text-sm font-semibold text-slate-900">Confirmar</h3>
+      </div>
+      <p id="dialog-message" class="text-xs text-slate-600 leading-relaxed">¿Continuar?</p>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeCustomDialog()"
+          class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+          Cancelar
+        </button>
+        <button id="dialog-confirm-btn"
+          class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none px-3 sm:px-0 no-print"></div>
+
+  <script>
+    let deferredPrompt = null;
+
+    function setupDynamicPWAManifest() {
+      try {
+        const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#0F2C59"/><rect x="128" y="128" width="256" height="256" rx="24" fill="none" stroke="#D97706" stroke-width="28"/><path d="M200 256h112M256 200v112" stroke="#FBBF24" stroke-width="28" stroke-linecap="round"/></svg>`;
+        const iconUrl = 'data:image/svg+xml;base64,' + btoa(svgIcon);
+        const manifest = {
+          name: 'SIGAP MDJLO',
+          short_name: 'SIGAP MDJLO',
+          description: 'Control biométrico de practicantes — MDJLO',
+          start_url: '.',
+          display: 'standalone',
+          background_color: '#0F2C59',
+          theme_color: '#0F2C59',
+          icons: [
+            { src: iconUrl, sizes: '192x192', type: 'image/svg+xml' },
+            { src: iconUrl, sizes: '512x512', type: 'image/svg+xml' }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = URL.createObjectURL(blob);
+        document.head.appendChild(link);
+      } catch (e) {}
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btn-pwa-install');
+      if (btn) btn.classList.remove('hidden');
+    });
+
+    async function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      } else {
+        showToast('Use el menú del navegador: Instalar aplicación o Agregar a pantalla de inicio.', 'info');
+      }
+    }
+
+    const STORAGE_KEYS = {
+      INTERNS: 'sigap_mdjlo_interns_v1',
+      LOGS: 'sigap_mdjlo_logs_v1',
+      SETTINGS: 'sigap_mdjlo_settings_v1'
+    };
+
+    function getPeruDateStr(dateObj = new Date()) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(dateObj);
+        return `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`;
+      } catch {
+        return dateObj.toISOString().slice(0, 10);
+      }
+    }
+
+    function getYesterdayPeruDateStr() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return getPeruDateStr(d);
+    }
+
+    function getPeru24TimeStr(dateObj = new Date()) {
+      try {
+        return dateObj.toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch {
+        return dateObj.toTimeString().slice(0, 8);
+      }
+    }
+
+    function getDefaultMDJLOData() {
+      const today = getPeruDateStr();
+      const yesterday = getYesterdayPeruDateStr();
+      const interns = [
+        { id: 'MDJLO-001', name: 'Mendoza Salazar, Carlos Eduardo', dni: '72849103', institution: 'UNPRG — Univ. Nacional Pedro Ruiz Gallo', career: 'Ingeniería de Sistemas (Preprofesional)', area: 'Sub Gerencia de Tecnologías de la Información y Sistemas', shiftLabel: 'Mañana', startTime: '08:00', endTime: '14:00', faceEnrolled: true, fpEnrolled: true, avatarColor: 'bg-mdjlo-navy' },
+        { id: 'MDJLO-002', name: 'Torres Ríos, Valeria Sofía', dni: '74910284', institution: 'USAT — Univ. Católica Santo Toribio de Mogrovejo', career: 'Administración de Empresas (Profesional)', area: 'Sub Gerencia de Recursos Humanos', shiftLabel: 'Mañana', startTime: '08:00', endTime: '14:00', faceEnrolled: true, fpEnrolled: true, avatarColor: 'bg-emerald-700' },
+        { id: 'MDJLO-003', name: 'Quispe Huamán, Diego Alejandro', dni: '71039482', institution: 'SENATI — Zonal Lambayeque', career: 'Soporte y Mantenimiento de Equipos de Cómputo', area: 'Mesa de Partes y Trámite Documentario', shiftLabel: 'Completo', startTime: '08:00', endTime: '17:00', faceEnrolled: true, fpEnrolled: true, avatarColor: 'bg-amber-700' },
+        { id: 'MDJLO-004', name: 'Paredes Santamaría, Camila Fernanda', dni: '75820193', institution: 'UCV — Univ. César Vallejo (Chiclayo)', career: 'Contabilidad y Finanzas (Preprofesional)', area: 'Gerencia de Administración Tributaria', shiftLabel: 'Mañana', startTime: '08:00', endTime: '14:00', faceEnrolled: true, fpEnrolled: true, avatarColor: 'bg-indigo-800' },
+        { id: 'MDJLO-005', name: 'Chávez Llontop, Jorge Luis', dni: '73910475', institution: 'UTP — Univ. Tecnológica del Perú (Chiclayo)', career: 'Ingeniería Civil (Preprofesional)', area: 'Sub Gerencia de Obras y Desarrollo Urbano', shiftLabel: 'Tarde', startTime: '13:00', endTime: '17:00', faceEnrolled: true, fpEnrolled: false, avatarColor: 'bg-slate-700' },
+        { id: 'MDJLO-006', name: 'Bances Farroñán, Lucía Maribel', dni: '76129384', institution: 'UNPRG — Univ. Nacional Pedro Ruiz Gallo', career: 'Derecho y Ciencia Política (Profesional)', area: 'Gerencia Municipal', shiftLabel: 'Completo', startTime: '08:00', endTime: '17:00', faceEnrolled: true, fpEnrolled: true, avatarColor: 'bg-teal-800' }
+      ];
+      const logs = [
+        { id: 'REG-5001', internId: 'MDJLO-001', internName: 'Mendoza Salazar, Carlos Eduardo', dni: '72849103', institution: 'UNPRG — Univ. Nacional Pedro Ruiz Gallo', area: 'Sub Gerencia de Tecnologías de la Información y Sistemas', date: today, checkIn: '07:55:14', checkOut: null, method: 'Reconocimiento Facial', accuracy: '99.7%', status: 'Puntual', lateMinutes: 0 },
+        { id: 'REG-5002', internId: 'MDJLO-003', internName: 'Quispe Huamán, Diego Alejandro', dni: '71039482', institution: 'SENATI — Zonal Lambayeque', area: 'Mesa de Partes y Trámite Documentario', date: today, checkIn: '08:16:38', checkOut: null, method: 'Huella Digital', accuracy: '99.3%', status: 'Tardanza', lateMinutes: 16 },
+        { id: 'REG-4991', internId: 'MDJLO-001', internName: 'Mendoza Salazar, Carlos Eduardo', dni: '72849103', institution: 'UNPRG — Univ. Nacional Pedro Ruiz Gallo', area: 'Sub Gerencia de Tecnologías de la Información y Sistemas', date: yesterday, checkIn: '07:57:02', checkOut: '14:03:19', method: 'Reconocimiento Facial', accuracy: '99.6%', status: 'Puntual', lateMinutes: 0 },
+        { id: 'REG-4992', internId: 'MDJLO-002', internName: 'Torres Ríos, Valeria Sofía', dni: '74910284', institution: 'USAT — Univ. Católica Santo Toribio de Mogrovejo', area: 'Sub Gerencia de Recursos Humanos', date: yesterday, checkIn: '07:59:41', checkOut: '14:05:11', method: 'Huella Digital', accuracy: '99.8%', status: 'Puntual', lateMinutes: 0 },
+        { id: 'REG-4993', internId: 'MDJLO-004', internName: 'Paredes Santamaría, Camila Fernanda', dni: '75820193', institution: 'UCV — Univ. César Vallejo (Chiclayo)', area: 'Gerencia de Administración Tributaria', date: yesterday, checkIn: '08:04:50', checkOut: '14:01:08', method: 'Reconocimiento Facial', accuracy: '99.2%', status: 'Puntual', lateMinutes: 0 }
+      ];
+      return {
+        interns,
+        logs,
+        settings: { sedeName: 'Palacio Municipal MDJLO — Recepción / Mesa de Partes', toleranceMinutes: 10, voiceEnabled: true }
+      };
+    }
+
+    let appState = {
+      interns: [],
+      logs: [],
+      settings: { sedeName: 'Palacio Municipal MDJLO — Recepción / Mesa de Partes', toleranceMinutes: 10, voiceEnabled: true },
+      selectedInternId: null,
+      attendanceMode: 'auto',
+      biometricMethod: 'facial',
+      isScanning: false,
+      webcamStream: null,
+      modalEnrollmentState: { face: false, fp: false }
+    };
+
+    function loadAppState() {
+      try {
+        const defaults = getDefaultMDJLOData();
+        const storedInterns = localStorage.getItem(STORAGE_KEYS.INTERNS);
+        const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+        const storedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+        appState.interns = storedInterns ? JSON.parse(storedInterns) : defaults.interns;
+        appState.logs = storedLogs ? JSON.parse(storedLogs) : defaults.logs;
+        appState.settings = storedSettings ? { ...defaults.settings, ...JSON.parse(storedSettings) } : defaults.settings;
+        if (!storedInterns) saveAppState();
+      } catch (e) {
+        const defaults = getDefaultMDJLOData();
+        appState.interns = defaults.interns;
+        appState.logs = defaults.logs;
+        appState.settings = defaults.settings;
+      }
+      if (appState.interns.length && !appState.selectedInternId) {
+        const today = getPeruDateStr();
+        const pending = appState.interns.find(i => !appState.logs.some(l => l.internId === i.id && l.date === today));
+        appState.selectedInternId = pending ? pending.id : appState.interns[0].id;
+      }
+    }
+
+    function saveAppState() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.INTERNS, JSON.stringify(appState.interns));
+        localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(appState.logs));
+        localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(appState.settings));
+      } catch (e) {}
+    }
+
+    function playConfirmationChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = ctx.currentTime;
+        [523.25, 659.25, 783.99].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + i * 0.09);
+          gain.gain.setValueAtTime(0.001, now + i * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.1, now + i * 0.09 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.09 + 0.28);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.09);
+          osc.stop(now + i * 0.09 + 0.3);
+        });
+      } catch (e) {}
+    }
+
+    function speakInstitutionalMessage(text) {
+      if (!appState.settings.voiceEnabled || !('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'es-PE';
+        u.rate = 1.02;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+
+    function toggleVoiceFeedback() {
+      appState.settings.voiceEnabled = !appState.settings.voiceEnabled;
+      saveAppState();
+      updateVoiceButtonUI();
+      showToast(appState.settings.voiceEnabled ? 'Voz activada' : 'Voz desactivada', 'info');
+    }
+
+    function updateVoiceButtonUI() {
+      const icon = document.getElementById('voice-icon');
+      if (!icon) return;
+      icon.className = appState.settings.voiceEnabled
+        ? 'fa-solid fa-volume-high text-xs'
+        : 'fa-solid fa-volume-xmark text-xs';
+    }
+
+    function startLivePeruClock() {
+      const tick = () => {
+        const now = new Date();
+        try {
+          const parts = new Intl.DateTimeFormat('es-PE', { timeZone: 'America/Lima', hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(now);
+          const h = parts.find(p => p.type === 'hour')?.value || '08';
+          const m = parts.find(p => p.type === 'minute')?.value || '00';
+          const s = parts.find(p => p.type === 'second')?.value || '00';
+          const period = (parts.find(p => p.type === 'dayPeriod')?.value || '').replace(/\./g, '').toUpperCase();
+          const clock = document.getElementById('live-clock');
+          const ampm = document.getElementById('live-ampm');
+          const dateEl = document.getElementById('live-date');
+          if (clock) clock.textContent = `${h}:${m}:${s}`;
+          if (ampm) ampm.textContent = period;
+          if (dateEl) dateEl.textContent = now.toLocaleDateString('es-PE', { timeZone: 'America/Lima', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        } catch (e) {
+          const clock = document.getElementById('live-clock');
+          if (clock) clock.textContent = getPeru24TimeStr(now);
+        }
+      };
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    function switchMainView(view) {
+      const terminal = document.getElementById('view-terminal');
+      const admin = document.getElementById('view-admin');
+      const navT = document.getElementById('nav-terminal');
+      const navA = document.getElementById('nav-admin');
+      if (view === 'terminal') {
+        terminal.classList.remove('hidden');
+        admin.classList.add('hidden');
+        navT.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-amber text-white transition-colors';
+        navA.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-blue-200 hover:text-white transition-colors';
+        renderTerminalInternSelector();
+      } else {
+        terminal.classList.add('hidden');
+        admin.classList.remove('hidden');
+        navA.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-amber text-white transition-colors';
+        navT.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-blue-200 hover:text-white transition-colors';
+        refreshAdminDashboard();
+      }
+    }
+
+    async function toggleKioskMode(enable) {
+      const navbar = document.getElementById('main-navbar');
+      const bar = document.getElementById('kiosk-floating-bar');
+      if (enable) {
+        switchMainView('terminal');
+        navbar.classList.add('hidden');
+        bar.classList.remove('hidden');
+        try {
+          if (document.documentElement.requestFullscreen && !document.fullscreenElement)
+            await document.documentElement.requestFullscreen();
+        } catch (e) {}
+        showToast('Modo kiosco activado', 'success');
+      } else {
+        navbar.classList.remove('hidden');
+        bar.classList.add('hidden');
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+        } catch (e) {}
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        document.getElementById('main-navbar')?.classList.remove('hidden');
+        document.getElementById('kiosk-floating-bar')?.classList.add('hidden');
+      }
+    });
+
+    function getInitials(name) {
+      const cleaned = name.replace(/,/g, ' ').trim();
+      const parts = cleaned.split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+
+    function clearTerminalSearch() {
+      const input = document.getElementById('terminal-dni-search');
+      if (input) {
+        input.value = '';
+        renderTerminalInternSelector('');
+      }
+    }
+
+    function renderTerminalInternSelector(query = '') {
+      const select = document.getElementById('terminal-intern-select');
+      if (!select) return;
+      const q = query.trim().toLowerCase();
+      const filtered = appState.interns.filter(i =>
+        i.dni.includes(q) || i.name.toLowerCase().includes(q) || i.area.toLowerCase().includes(q)
+      );
+      select.innerHTML = '';
+      if (!filtered.length) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Sin coincidencias';
+        select.appendChild(opt);
+        return;
+      }
+      filtered.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = `${i.dni} — ${i.name}`;
+        if (i.id === appState.selectedInternId) opt.selected = true;
+        select.appendChild(opt);
+      });
+      if (!filtered.some(i => i.id === appState.selectedInternId))
+        appState.selectedInternId = filtered[0].id;
+      renderSelectedInternCard();
+      updateAttendanceTypeButtons();
+    }
+
+    function filterTerminalInterns(q) { renderTerminalInternSelector(q); }
+
+    function handleSelectIntern(id) {
+      if (!id) return;
+      appState.selectedInternId = id;
+      renderSelectedInternCard();
+      updateAttendanceTypeButtons();
+    }
+
+    function getInternTodayStatus(id) {
+      const today = getPeruDateStr();
+      const logs = appState.logs.filter(l => l.internId === id && l.date === today);
+      if (!logs.length) return { state: 'NO_CHECKIN', log: null };
+      const open = logs.find(l => !l.checkOut);
+      if (open) return { state: 'CHECKED_IN', log: open };
+      return { state: 'COMPLETED', log: logs[logs.length - 1] };
+    }
+
+    function renderSelectedInternCard() {
+      const card = document.getElementById('selected-intern-card');
+      const intern = appState.interns.find(i => i.id === appState.selectedInternId);
+      if (!card || !intern) return;
+      const info = getInternTodayStatus(intern.id);
+      let badge = '';
+      if (info.state === 'NO_CHECKIN')
+        badge = '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">Pendiente de entrada</span>';
+      else if (info.state === 'CHECKED_IN')
+        badge = `<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">Ingresó ${info.log.checkIn}</span>`;
+      else
+        badge = `<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">Completado</span>`;
+
+      card.innerHTML = `
+        <div class="flex items-start gap-2.5">
+          <div class="w-9 h-9 rounded-lg ${intern.avatarColor || 'bg-mdjlo-navy'} text-white text-xs font-semibold flex items-center justify-center shrink-0">
+            ${getInitials(intern.name)}
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-slate-900 truncate">${intern.name}</p>
+            <p class="text-[11px] font-mono text-slate-500">DNI ${intern.dni}</p>
+            <p class="text-[11px] text-slate-600 mt-0.5 truncate">${intern.area}</p>
+          </div>
+        </div>
+        <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+          <span class="text-[10px] text-slate-500 font-mono">${intern.shiftLabel}: ${intern.startTime}–${intern.endTime}</span>
+          ${badge}
+        </div>`;
+    }
+
+    function setAttendanceMode(mode) {
+      appState.attendanceMode = mode;
+      updateAttendanceTypeButtons();
+    }
+
+    function getResolvedAttendanceAction() {
+      if (appState.attendanceMode === 'entrada') return 'entrada';
+      if (appState.attendanceMode === 'salida') return 'salida';
+      const info = getInternTodayStatus(appState.selectedInternId);
+      return info.state === 'CHECKED_IN' ? 'salida' : 'entrada';
+    }
+
+    function updateAttendanceTypeButtons() {
+      const resolved = getResolvedAttendanceAction();
+      const btnAuto = document.getElementById('btn-mode-auto');
+      const btnIn = document.getElementById('btn-type-entrada');
+      const btnOut = document.getElementById('btn-type-salida');
+      const expl = document.getElementById('smart-mode-explanation');
+
+      if (appState.attendanceMode === 'auto') {
+        btnAuto.className = 'text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200';
+      } else {
+        btnAuto.className = 'text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200';
+      }
+
+      if (resolved === 'entrada') {
+        btnIn.className = 'flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-semibold transition-colors';
+        btnOut.className = 'flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-semibold hover:border-slate-300 transition-colors';
+      } else {
+        btnOut.className = 'flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-amber-600 bg-amber-50 text-amber-900 font-semibold transition-colors';
+        btnIn.className = 'flex flex-col items-center gap-1 p-3 rounded-lg border-2 border-slate-200 bg-white text-slate-500 font-semibold hover:border-slate-300 transition-colors';
+      }
+
+      if (appState.attendanceMode === 'auto') {
+        expl.innerHTML = resolved === 'entrada'
+          ? '<i class="fa-solid fa-circle-info text-slate-400 mt-0.5"></i><span>Sin ingreso abierto. Se registrará <strong>entrada</strong>.</span>'
+          : '<i class="fa-solid fa-circle-info text-slate-400 mt-0.5"></i><span>Ingreso activo. Se registrará <strong>salida</strong>.</span>';
+      } else {
+        expl.innerHTML = `<i class="fa-solid fa-hand-pointer text-slate-400 mt-0.5"></i><span>Modo manual: <strong>${resolved}</strong>.</span>`;
+      }
+    }
+
+    function switchBiometricMethod(method) {
+      appState.biometricMethod = method;
+      const tabF = document.getElementById('tab-bio-facial');
+      const tabH = document.getElementById('tab-bio-huella');
+      const panF = document.getElementById('panel-bio-facial');
+      const panH = document.getElementById('panel-bio-huella');
+      if (method === 'facial') {
+        tabF.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-navy text-white transition-colors';
+        tabH.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors';
+        panF.classList.remove('hidden');
+        panH.classList.add('hidden');
+      } else {
+        tabH.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-navy text-white transition-colors';
+        tabF.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition-colors';
+        panH.classList.remove('hidden');
+        panF.classList.add('hidden');
+      }
+    }
+
+    async function initRealWebcam() {
+      const video = document.getElementById('webcam-video');
+      const sim = document.getElementById('simulated-camera-feed');
+      const label = document.getElementById('webcam-btn-label');
+      if (appState.webcamStream) {
+        appState.webcamStream.getTracks().forEach(t => t.stop());
+        appState.webcamStream = null;
+        video.classList.add('hidden');
+        sim.classList.remove('hidden');
+        label.textContent = 'Usar cámara';
+        showToast('Cámara desactivada', 'info');
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        showToast('Cámara no disponible en este navegador', 'warning');
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+        appState.webcamStream = stream;
+        video.srcObject = stream;
+        video.classList.remove('hidden');
+        sim.classList.add('hidden');
+        label.textContent = 'Desactivar cámara';
+        showToast('Cámara conectada', 'success');
+      } catch (e) {
+        showToast('No se pudo acceder a la cámara', 'info');
+      }
+    }
+
+    function startFacialVerification() {
+      if (appState.isScanning) return;
+      const intern = appState.interns.find(i => i.id === appState.selectedInternId);
+      if (!intern) {
+        showToast('Seleccione un practicante', 'error');
+        return;
+      }
+      appState.isScanning = true;
+      const btn = document.getElementById('btn-start-facial-scan');
+      const hud = document.getElementById('facial-hud-status');
+      const conf = document.getElementById('facial-hud-confidence');
+      const overlay = document.getElementById('facial-progress-overlay');
+      const label = document.getElementById('facial-progress-label');
+      const pct = document.getElementById('facial-progress-pct');
+      const bar = document.getElementById('facial-progress-bar');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-60');
+      overlay.classList.remove('hidden');
+      hud.textContent = 'Escaneando…';
+
+      let progress = 0;
+      const finalAcc = (98.8 + Math.random() * 1.1).toFixed(1) + '%';
+      const iv = setInterval(() => {
+        progress = Math.min(100, progress + 12);
+        bar.style.width = progress + '%';
+        pct.textContent = progress + '%';
+        if (progress < 50) {
+          label.textContent = 'Capturando rostro…';
+          conf.textContent = (70 + progress * 0.4).toFixed(0) + '%';
+        } else if (progress < 90) {
+          label.textContent = 'Verificando identidad…';
+          conf.textContent = (88 + progress * 0.1).toFixed(0) + '%';
+        } else {
+          label.textContent = 'Verificado';
+          conf.textContent = finalAcc;
+        }
+        if (progress >= 100) {
+          clearInterval(iv);
+          setTimeout(() => {
+            overlay.classList.add('hidden');
+            bar.style.width = '0%';
+            hud.textContent = 'Verificado';
+            btn.disabled = false;
+            btn.classList.remove('opacity-60');
+            appState.isScanning = false;
+            recordBiometricAttendance('Reconocimiento Facial', finalAcc);
+          }, 220);
+        }
+      }, 130);
+    }
+
+    let fpHoldTimer = null;
+    let fpProgress = 0;
+    let fpDone = false;
+
+    function updateFpVisuals(pct, status, active) {
+      const circle = document.getElementById('fp-progress-circle');
+      const pad = document.getElementById('fp-touch-pad');
+      const icon = document.getElementById('fp-sensor-icon');
+      const statusEl = document.getElementById('fp-status-text');
+      const pctEl = document.getElementById('fp-pct-text');
+      const circ = 326.726;
+      circle.style.strokeDashoffset = circ - (pct / 100) * circ;
+      pctEl.textContent = Math.round(pct) + '%';
+      statusEl.textContent = status;
+      if (active) {
+        pad.classList.add('fp-active', 'border-emerald-500');
+        icon.classList.remove('text-slate-400');
+        icon.classList.add('text-emerald-600');
+      } else {
+        pad.classList.remove('fp-active', 'border-emerald-500');
+        icon.classList.remove('text-emerald-600');
+        icon.classList.add('text-slate-400');
+      }
+    }
+
+    function beginFingerprintHold(e) {
+      if (e?.cancelable) e.preventDefault();
+      if (appState.isScanning) return;
+      fpDone = false;
+      fpProgress = 10;
+      updateFpVisuals(fpProgress, 'Leyendo…', true);
+      clearInterval(fpHoldTimer);
+      fpHoldTimer = setInterval(() => {
+        fpProgress += 14;
+        if (fpProgress >= 100) {
+          fpProgress = 100;
+          clearInterval(fpHoldTimer);
+          fpDone = true;
+          completeFingerprintScan();
+        } else {
+          updateFpVisuals(fpProgress, 'Verificando…', true);
+        }
+      }, 90);
+    }
+
+    function endFingerprintHold() {
+      if (fpDone || appState.isScanning) return;
+      if (fpProgress > 0 && fpProgress < 100) {
+        clearInterval(fpHoldTimer);
+        fpHoldTimer = setInterval(() => {
+          fpProgress += 20;
+          if (fpProgress >= 100) {
+            fpProgress = 100;
+            clearInterval(fpHoldTimer);
+            fpDone = true;
+            completeFingerprintScan();
+          } else {
+            updateFpVisuals(fpProgress, 'Completando…', true);
+          }
+        }, 70);
+      }
+    }
+
+    function cancelFingerprintHold() {
+      if (fpDone || appState.isScanning) return;
+      clearInterval(fpHoldTimer);
+      fpProgress = 0;
+      updateFpVisuals(0, 'Sensor listo', false);
+    }
+
+    function triggerFingerprintClick() {
+      if (!fpDone && !appState.isScanning && fpProgress === 0) {
+        beginFingerprintHold();
+        endFingerprintHold();
+      }
+    }
+
+    function completeFingerprintScan() {
+      appState.isScanning = true;
+      const acc = (99.1 + Math.random() * 0.8).toFixed(1) + '%';
+      updateFpVisuals(100, 'Verificado', true);
+      setTimeout(() => {
+        updateFpVisuals(0, 'Sensor listo', false);
+        fpProgress = 0;
+        appState.isScanning = false;
+        recordBiometricAttendance('Huella Digital', acc);
+      }, 250);
+    }
+
+    async function triggerNativeWebAuthn() {
+      if (!window.PublicKeyCredential) {
+        showToast('WebAuthn no disponible. Use el sensor en pantalla.', 'warning');
+        return;
+      }
+      try {
+        updateFpVisuals(40, 'Esperando lector…', true);
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        const userId = new Uint8Array(16);
+        crypto.getRandomValues(userId);
+        const intern = appState.interns.find(i => i.id === appState.selectedInternId);
+        await navigator.credentials.create({
+          publicKey: {
+            challenge,
+            rp: { name: 'SIGAP MDJLO' },
+            user: { id: userId, name: intern?.dni || 'practicante', displayName: intern?.name || 'Practicante' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+            timeout: 20000
+          }
+        });
+        updateFpVisuals(100, 'Verificado', true);
+        setTimeout(() => {
+          updateFpVisuals(0, 'Sensor listo', false);
+          recordBiometricAttendance('Huella Digital (dispositivo)', '99.9%');
+        }, 200);
+      } catch (e) {
+        updateFpVisuals(0, 'Sensor listo', false);
+        showToast('Lector cancelado o no disponible', 'info');
+      }
+    }
+
+    function timeStrToMinutes(hhmm) {
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function calculateWorkedHours(inStr, outStr) {
+      if (!inStr || inStr === '--:--:--' || !outStr) return 'En turno';
+      const [h1, m1] = inStr.split(':').map(Number);
+      const [h2, m2] = outStr.split(':').map(Number);
+      let mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+      if (mins < 0) mins = 0;
+      return `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m`;
+    }
+
+    function getShortFirstName(full) {
+      if (full.includes(',')) return full.split(',')[1].trim().split(/\s+/)[0];
+      return full.split(/\s+/)[0];
+    }
+
+    function recordBiometricAttendance(method, accuracy) {
+      const intern = appState.interns.find(i => i.id === appState.selectedInternId);
+      if (!intern) return;
+      const now = new Date();
+      const today = getPeruDateStr(now);
+      const exactTime = getPeru24TimeStr(now);
+      const action = getResolvedAttendanceAction();
+      const firstName = getShortFirstName(intern.name);
+
+      if (action === 'entrada') {
+        const open = appState.logs.find(l => l.internId === intern.id && l.date === today && !l.checkOut);
+        if (open) {
+          showToast('Ya tiene ingreso abierto. Se registrará salida.', 'info');
+          appState.attendanceMode = 'salida';
+          recordBiometricAttendance(method, accuracy);
+          return;
+        }
+        const scheduled = timeStrToMinutes(intern.startTime);
+        const [ah, am] = exactTime.split(':').map(Number);
+        const actual = ah * 60 + am;
+        const tol = Number(appState.settings.toleranceMinutes) || 10;
+        const late = Math.max(0, actual - scheduled);
+        const status = actual <= scheduled + tol ? 'Puntual' : 'Tardanza';
+        appState.logs.unshift({
+          id: 'REG-' + Date.now(),
+          internId: intern.id,
+          internName: intern.name,
+          dni: intern.dni,
+          institution: intern.institution,
+          area: intern.area,
+          date: today,
+          checkIn: exactTime,
+          checkOut: null,
+          method,
+          accuracy,
+          status,
+          lateMinutes: late
+        });
+        saveAppState();
+        playConfirmationChime();
+        speakInstitutionalMessage(`Bienvenido, ${firstName}. Entrada registrada como ${status}.`);
+        showAttendanceConfirmationModal({
+          bannerType: status === 'Tardanza' ? 'TARDANZA' : 'PUNTUAL',
+          title: status === 'Tardanza' ? 'Entrada con tardanza' : 'Entrada puntual registrada',
+          intern, time: exactTime, method, accuracy,
+          statusLabel: status === 'Tardanza' ? `Tardanza (+${late} min)` : 'Puntual'
+        });
+      } else {
+        const open = appState.logs.find(l => l.internId === intern.id && l.date === today && !l.checkOut);
+        if (open) {
+          open.checkOut = exactTime;
+          saveAppState();
+          const worked = calculateWorkedHours(open.checkIn, exactTime);
+          playConfirmationChime();
+          speakInstitutionalMessage(`Salida registrada. Gracias por su labor, ${firstName}.`);
+          showAttendanceConfirmationModal({
+            bannerType: 'SALIDA',
+            title: 'Salida registrada',
+            intern, time: exactTime, method, accuracy,
+            statusLabel: `Salida (${worked})`
+          });
+        } else {
+          appState.logs.unshift({
+            id: 'REG-' + Date.now(),
+            internId: intern.id,
+            internName: intern.name,
+            dni: intern.dni,
+            institution: intern.institution,
+            area: intern.area,
+            date: today,
+            checkIn: '--:--:--',
+            checkOut: exactTime,
+            method,
+            accuracy,
+            status: 'Puntual',
+            lateMinutes: 0
+          });
+          saveAppState();
+          playConfirmationChime();
+          speakInstitutionalMessage(`Salida registrada, ${firstName}.`);
+          showAttendanceConfirmationModal({
+            bannerType: 'SALIDA',
+            title: 'Salida registrada',
+            intern, time: exactTime, method, accuracy,
+            statusLabel: 'Salida registrada'
+          });
+        }
+      }
+      appState.attendanceMode = 'auto';
+      renderSelectedInternCard();
+      updateAttendanceTypeButtons();
+      refreshAdminDashboard();
+    }
+
+    let confirmTimer = null;
+
+    function showAttendanceConfirmationModal({ bannerType, title, intern, time, method, accuracy, statusLabel }) {
+      const modal = document.getElementById('confirmation-modal');
+      const banner = document.getElementById('confirm-modal-banner');
+      const icon = document.getElementById('confirm-modal-icon');
+      document.getElementById('confirm-modal-title').textContent = title;
+      document.getElementById('confirm-avatar').textContent = getInitials(intern.name);
+      document.getElementById('confirm-name').textContent = intern.name;
+      document.getElementById('confirm-dni').textContent = 'DNI: ' + intern.dni;
+      document.getElementById('confirm-area').textContent = intern.area;
+      document.getElementById('confirm-institution').textContent = intern.institution;
+      document.getElementById('confirm-time').textContent = time;
+      document.getElementById('confirm-method').textContent = method;
+      document.getElementById('confirm-accuracy').textContent = accuracy;
+      const badge = document.getElementById('confirm-status-badge');
+      badge.textContent = statusLabel;
+
+      if (bannerType === 'TARDANZA') {
+        banner.className = 'bg-amber-600 p-5 text-center text-white';
+        icon.className = 'fa-solid fa-clock text-xl';
+        badge.className = 'inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-800';
+      } else if (bannerType === 'SALIDA') {
+        banner.className = 'bg-mdjlo-navy p-5 text-center text-white';
+        icon.className = 'fa-solid fa-right-from-bracket text-xl text-amber-300';
+        badge.className = 'inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-mdjlo-navy';
+      } else {
+        banner.className = 'bg-emerald-600 p-5 text-center text-white';
+        icon.className = 'fa-solid fa-check text-xl';
+        badge.className = 'inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800';
+      }
+
+      modal.classList.remove('hidden');
+      let left = 6;
+      document.getElementById('confirm-countdown').textContent = left;
+      clearInterval(confirmTimer);
+      confirmTimer = setInterval(() => {
+        left--;
+        document.getElementById('confirm-countdown').textContent = left;
+        if (left <= 0) closeConfirmationModal();
+      }, 1000);
+    }
+
+    function closeConfirmationModal() {
+      clearInterval(confirmTimer);
+      document.getElementById('confirmation-modal').classList.add('hidden');
+    }
+
+    function switchAdminSubtab(tab) {
+      ['logs', 'interns', 'settings'].forEach(p => {
+        const panel = document.getElementById('admin-panel-' + p);
+        const btn = document.getElementById('subtab-' + p);
+        if (p === tab) {
+          panel.classList.remove('hidden');
+          btn.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-mdjlo-navy text-white transition-colors';
+        } else {
+          panel.classList.add('hidden');
+          btn.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors';
+        }
+      });
+      if (tab === 'interns') renderInternsCRUDGrid();
+      if (tab === 'settings') loadSettingsForm();
+    }
+
+    function refreshAdminDashboard() {
+      updateAdminKPIs();
+      renderAttendanceTable();
+      renderInternsCRUDGrid();
+      loadSettingsForm();
+    }
+
+    function updateAdminKPIs() {
+      const today = getPeruDateStr();
+      const todayLogs = appState.logs.filter(l => l.date === today);
+      const present = new Set(todayLogs.map(l => l.internId)).size;
+      const active = todayLogs.filter(l => !l.checkOut).length;
+      const tardies = todayLogs.filter(l => l.status === 'Tardanza').length;
+      const entries = appState.logs.filter(l => l.checkIn && l.checkIn !== '--:--:--');
+      const punctual = entries.filter(l => l.status === 'Puntual').length;
+      const rate = entries.length ? Math.round((punctual / entries.length) * 100) : 100;
+
+      document.getElementById('kpi-total-interns').textContent = appState.interns.length;
+      document.getElementById('kpi-present-today').textContent = present;
+      document.getElementById('kpi-active-shift-sub').textContent = active + ' en turno';
+      document.getElementById('kpi-tardies-today').textContent = tardies;
+      document.getElementById('kpi-tolerance-sub').textContent = 'Tolerancia: ' + appState.settings.toleranceMinutes + ' min';
+      document.getElementById('kpi-punctuality-rate').textContent = rate + '%';
+
+      const sede = document.getElementById('terminal-sede-name');
+      const shift = document.getElementById('terminal-shift-status');
+      if (sede) sede.textContent = appState.settings.sedeName;
+      if (shift) shift.textContent = appState.settings.toleranceMinutes + ' minutos';
+    }
+
+    function getFilteredAttendanceLogs() {
+      const q = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+      const area = document.getElementById('filter-area')?.value || 'ALL';
+      const status = document.getElementById('filter-status')?.value || 'ALL';
+      const date = document.getElementById('filter-date')?.value || '';
+      return appState.logs.filter(l => {
+        const matchQ = l.internName.toLowerCase().includes(q) || l.dni.includes(q);
+        const matchA = area === 'ALL' || l.area === area;
+        const matchD = !date || l.date === date;
+        let matchS = true;
+        if (status === 'Salida') matchS = !!l.checkOut;
+        else if (status === 'En curso') matchS = !l.checkOut;
+        else if (status !== 'ALL') matchS = l.status === status;
+        return matchQ && matchA && matchD && matchS;
+      });
+    }
+
+    function resetAttendanceFilters() {
+      ['filter-search', 'filter-area', 'filter-status', 'filter-date'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = id === 'filter-area' || id === 'filter-status' ? 'ALL' : '';
+      });
+      renderAttendanceTable();
+    }
+
+    function renderAttendanceTable() {
+      const tbody = document.getElementById('attendance-table-body');
+      const empty = document.getElementById('attendance-empty-state');
+      if (!tbody) return;
+      const logs = getFilteredAttendanceLogs();
+      tbody.innerHTML = '';
+      if (!logs.length) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      logs.forEach(l => {
+        const isFace = l.method.toLowerCase().includes('facial');
+        const method = isFace
+          ? `<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">${l.method.split(' ')[0]}</span>`
+          : `<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">Huella</span>`;
+        let status = '';
+        if (l.status === 'Tardanza')
+          status = `<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">Tardanza${l.lateMinutes ? ' +' + l.lateMinutes + 'm' : ''}</span>`;
+        else if (l.checkOut)
+          status = '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">Salida</span>';
+        else
+          status = '<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">En turno</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80';
+        tr.innerHTML = `
+          <td class="py-2 px-3">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded bg-mdjlo-navy text-amber-300 text-[10px] font-semibold flex items-center justify-center shrink-0">${getInitials(l.internName)}</div>
+              <div>
+                <p class="font-medium text-slate-800">${l.internName}</p>
+                <p class="text-[10px] text-slate-400">${l.institution || ''}</p>
+              </div>
+            </div>
+          </td>
+          <td class="py-2 px-3 font-mono text-slate-600">${l.dni}</td>
+          <td class="py-2 px-3 text-slate-600 max-w-[160px] truncate" title="${l.area}">${l.area}</td>
+          <td class="py-2 px-3 font-mono text-slate-500">${l.date}</td>
+          <td class="py-2 px-3 font-mono font-medium">${l.checkIn}</td>
+          <td class="py-2 px-3 font-mono ${l.checkOut ? 'text-slate-800' : 'text-amber-600'}">${l.checkOut || '—'}</td>
+          <td class="py-2 px-3 font-mono text-slate-500">${calculateWorkedHours(l.checkIn, l.checkOut)}</td>
+          <td class="py-2 px-3">${method}</td>
+          <td class="py-2 px-3">${status}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportAttendanceCSV() {
+      const logs = getFilteredAttendanceLogs();
+      if (!logs.length) {
+        showToast('No hay registros para exportar', 'warning');
+        return;
+      }
+      const today = getPeruDateStr();
+      const time = getPeru24TimeStr();
+      const header = [
+        '"MUNICIPALIDAD DISTRITAL DE JOSÉ LEONARDO ORTIZ"',
+        '"Sub Gerencia de Recursos Humanos — Reporte de asistencia biométrica"',
+        `"Sede: ${appState.settings.sedeName} | Emisión: ${today} ${time}"`,
+        ''
+      ];
+      const cols = ['ID', 'Nombre', 'DNI', 'Institución', 'Área', 'Fecha', 'Entrada', 'Salida', 'Horas', 'Método', 'Precisión', 'Estado'];
+      const rows = logs.map(l => [
+        l.id, `"${l.internName}"`, l.dni, `"${l.institution || ''}"`, `"${l.area}"`,
+        l.date, l.checkIn, l.checkOut || 'En turno',
+        `"${calculateWorkedHours(l.checkIn, l.checkOut)}"`, `"${l.method}"`, l.accuracy || '',
+        l.checkOut && l.status === 'Puntual' ? 'Salida (Puntual)' : l.status
+      ]);
+      const csv = '\uFEFF' + [...header, cols.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Asistencia_MDJLO_${today}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('CSV descargado', 'success');
+    }
+
+    function buildOfficialPrintHTML() {
+      const logs = getFilteredAttendanceLogs();
+      const today = getPeruDateStr();
+      const time = getPeru24TimeStr();
+      const rows = logs.map((l, i) => `
+        <tr style="border-bottom:1px solid #e2e8f0">
+          <td style="padding:5px 6px;text-align:center;font-size:11px">${i + 1}</td>
+          <td style="padding:5px 6px;font-size:11px;font-weight:600">${l.internName}</td>
+          <td style="padding:5px 6px;font-family:monospace;font-size:11px;text-align:center">${l.dni}</td>
+          <td style="padding:5px 6px;font-size:10px">${l.area}</td>
+          <td style="padding:5px 6px;font-family:monospace;font-size:11px;text-align:center">${l.date}</td>
+          <td style="padding:5px 6px;font-family:monospace;font-size:11px;text-align:center">${l.checkIn}</td>
+          <td style="padding:5px 6px;font-family:monospace;font-size:11px;text-align:center">${l.checkOut || '—'}</td>
+          <td style="padding:5px 6px;font-size:10px;text-align:center">${l.method}</td>
+          <td style="padding:5px 6px;font-size:10px;font-weight:600;text-align:center">${l.status}</td>
+        </tr>`).join('');
+
+      return `
+        <div style="font-family:Inter,Arial,sans-serif;color:#0f172a;max-width:100%">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0F2C59;padding-bottom:10px;margin-bottom:14px">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#0F2C59">MUNICIPALIDAD DISTRITAL DE JOSÉ LEONARDO ORTIZ</div>
+              <div style="font-size:11px;color:#64748b">Sub Gerencia de Recursos Humanos · Chiclayo, Lambayeque</div>
+              <div style="font-size:10px;color:#94a3b8">SIGAP MDJLO — Control de asistencia de practicantes</div>
+            </div>
+            <div style="text-align:right;font-size:10px;color:#475569">
+              <div>Emisión: ${today}</div>
+              <div>Hora: ${time}</div>
+              <div>Registros: ${logs.length}</div>
+            </div>
+          </div>
+          <h2 style="font-size:12px;font-weight:700;text-align:center;margin:0 0 12px;text-transform:uppercase;color:#0F2C59">
+            Reporte de asistencia biométrica
+          </h2>
+          <p style="font-size:10px;text-align:center;color:#64748b;margin:0 0 12px">
+            ${appState.settings.sedeName} · Tolerancia: ${appState.settings.toleranceMinutes} min
+          </p>
+          <table style="width:100%;border-collapse:collapse;border:1px solid #cbd5e1;margin-bottom:24px">
+            <thead>
+              <tr style="background:#0F2C59;color:#fff;font-size:10px;text-transform:uppercase">
+                <th style="padding:6px;border:1px solid #0F2C59">N°</th>
+                <th style="padding:6px;text-align:left;border:1px solid #0F2C59">Nombre</th>
+                <th style="padding:6px;border:1px solid #0F2C59">DNI</th>
+                <th style="padding:6px;text-align:left;border:1px solid #0F2C59">Área</th>
+                <th style="padding:6px;border:1px solid #0F2C59">Fecha</th>
+                <th style="padding:6px;border:1px solid #0F2C59">Entrada</th>
+                <th style="padding:6px;border:1px solid #0F2C59">Salida</th>
+                <th style="padding:6px;border:1px solid #0F2C59">Método</th>
+                <th style="padding:6px;border:1px solid #0F2C59">Estado</th>
+              </tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="9" style="padding:12px;text-align:center;font-size:11px">Sin registros</td></tr>'}</tbody>
+          </table>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;text-align:center;font-size:10px;margin-top:36px">
+            <div><div style="border-top:1px solid #0f172a;padding-top:6px;font-weight:600">Firma del practicante</div><div style="color:#64748b">DNI ________________</div></div>
+            <div><div style="border-top:1px solid #0f172a;padding-top:6px;font-weight:600">V°B° Jefe de área</div><div style="color:#64748b">Conformidad de labores</div></div>
+            <div><div style="border-top:1px solid #0f172a;padding-top:6px;font-weight:600">V°B° Sub Gerente RR.HH.</div><div style="color:#64748b">MDJLO</div></div>
+          </div>
+        </div>`;
+    }
+
+    function openPrintPreviewModal() {
+      const html = buildOfficialPrintHTML();
+      document.getElementById('print-preview-body').innerHTML = html;
+      document.getElementById('print-document-container').innerHTML = html;
+      document.getElementById('print-preview-modal').classList.remove('hidden');
+    }
+
+    function closePrintPreviewModal() {
+      document.getElementById('print-preview-modal').classList.add('hidden');
+    }
+
+    function executeOfficialPrint() {
+      document.getElementById('print-document-container').innerHTML = buildOfficialPrintHTML();
+      window.print();
+    }
+
+    function simulateRandomCheckIn() {
+      if (!appState.interns.length) return;
+      const intern = appState.interns[Math.floor(Math.random() * appState.interns.length)];
+      appState.selectedInternId = intern.id;
+      appState.attendanceMode = 'auto';
+      const methods = ['Reconocimiento Facial', 'Huella Digital'];
+      recordBiometricAttendance(methods[Math.floor(Math.random() * 2)], (99 + Math.random()).toFixed(1) + '%');
+    }
+
+    function renderInternsCRUDGrid() {
+      const grid = document.getElementById('interns-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      appState.interns.forEach(i => {
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3';
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-lg ${i.avatarColor || 'bg-mdjlo-navy'} text-white text-xs font-semibold flex items-center justify-center shrink-0">${getInitials(i.name)}</div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-900 truncate">${i.name}</p>
+                <p class="text-[11px] font-mono text-slate-500">DNI ${i.dni}</p>
+              </div>
+            </div>
+            <div class="flex gap-0.5 shrink-0">
+              <button onclick="openInternModal('${i.id}')" class="w-7 h-7 rounded text-slate-400 hover:text-mdjlo-navy hover:bg-slate-50 flex items-center justify-center"><i class="fa-solid fa-pen text-[10px]"></i></button>
+              <button onclick="confirmDeleteIntern('${i.id}')" class="w-7 h-7 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center"><i class="fa-solid fa-trash text-[10px]"></i></button>
+            </div>
+          </div>
+          <div class="text-[11px] space-y-1 text-slate-600">
+            <p class="truncate text-amber-700 font-medium">${i.institution}</p>
+            <p class="truncate">${i.career}</p>
+            <p class="pt-1 border-t border-slate-100"><span class="text-slate-400">Área:</span> ${i.area}</p>
+            <p><span class="text-slate-400">Turno:</span> <span class="font-mono font-medium">${i.shiftLabel} ${i.startTime}–${i.endTime}</span></p>
+          </div>
+          <div class="flex gap-1.5 pt-1 border-t border-slate-100">
+            <span class="flex-1 text-center py-1 rounded text-[10px] font-medium ${i.faceEnrolled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'}">Rostro ${i.faceEnrolled ? 'OK' : '—'}</span>
+            <span class="flex-1 text-center py-1 rounded text-[10px] font-medium ${i.fpEnrolled ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}">Huella ${i.fpEnrolled ? 'OK' : '—'}</span>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function openInternModal(id = null) {
+      const modal = document.getElementById('intern-modal');
+      const title = document.getElementById('intern-modal-title');
+      const idInput = document.getElementById('form-intern-id');
+      if (id) {
+        const i = appState.interns.find(x => x.id === id);
+        if (!i) return;
+        title.textContent = 'Editar practicante';
+        idInput.value = i.id;
+        document.getElementById('form-intern-dni').value = i.dni;
+        document.getElementById('form-intern-name').value = i.name;
+        document.getElementById('form-intern-institution').value = i.institution || '';
+        document.getElementById('form-intern-career').value = i.career || '';
+        document.getElementById('form-intern-area').value = i.area;
+        const shiftVal = `${i.shiftLabel || 'Mañana'}|${i.startTime}|${i.endTime}`;
+        document.getElementById('form-intern-shift').value = Array.from(document.getElementById('form-intern-shift').options).some(o => o.value === shiftVal) ? shiftVal : 'Mañana|08:00|14:00';
+        appState.modalEnrollmentState = { face: i.faceEnrolled, fp: i.fpEnrolled };
+      } else {
+        title.textContent = 'Registrar practicante';
+        idInput.value = '';
+        document.getElementById('form-intern-dni').value = '';
+        document.getElementById('form-intern-name').value = '';
+        document.getElementById('form-intern-institution').value = '';
+        document.getElementById('form-intern-career').value = '';
+        document.getElementById('form-intern-area').value = 'Sub Gerencia de Recursos Humanos';
+        document.getElementById('form-intern-shift').value = 'Mañana|08:00|14:00';
+        appState.modalEnrollmentState = { face: false, fp: false };
+      }
+      updateEnrollmentButtonsUI();
+      modal.classList.remove('hidden');
+    }
+
+    function closeInternModal() {
+      document.getElementById('intern-modal').classList.add('hidden');
+    }
+
+    function simulateBiometricEnrollment(type) {
+      setTimeout(() => {
+        appState.modalEnrollmentState[type] = true;
+        updateEnrollmentButtonsUI();
+        showToast(type === 'face' ? 'Rostro registrado' : 'Huella registrada', 'success');
+      }, 500);
+    }
+
+    function updateEnrollmentButtonsUI() {
+      const { face, fp } = appState.modalEnrollmentState;
+      const faceTitle = document.getElementById('enroll-face-title');
+      const faceCheck = document.getElementById('enroll-face-check');
+      if (face) {
+        faceTitle.textContent = 'Rostro OK';
+        faceCheck.className = 'fa-solid fa-circle-check text-emerald-600';
+      } else {
+        faceTitle.textContent = 'Enrolar rostro';
+        faceCheck.className = 'fa-regular fa-circle text-slate-300';
+      }
+      const fpTitle = document.getElementById('enroll-fp-title');
+      const fpCheck = document.getElementById('enroll-fp-check');
+      if (fp) {
+        fpTitle.textContent = 'Huella OK';
+        fpCheck.className = 'fa-solid fa-circle-check text-mdjlo-navy';
+      } else {
+        fpTitle.textContent = 'Registrar huella';
+        fpCheck.className = 'fa-regular fa-circle text-slate-300';
+      }
+    }
+
+    function saveInternForm(e) {
+      e.preventDefault();
+      const id = document.getElementById('form-intern-id').value;
+      const dni = document.getElementById('form-intern-dni').value.trim();
+      const name = document.getElementById('form-intern-name').value.trim();
+      const institution = document.getElementById('form-intern-institution').value.trim();
+      const career = document.getElementById('form-intern-career').value.trim();
+      const area = document.getElementById('form-intern-area').value;
+      const [shiftLabel, startTime, endTime] = document.getElementById('form-intern-shift').value.split('|');
+
+      if (!/^\d{8}$/.test(dni)) {
+        showToast('DNI debe tener 8 dígitos', 'error');
+        return;
+      }
+      if (appState.interns.some(i => i.dni === dni && i.id !== id)) {
+        showToast('Ya existe un practicante con ese DNI', 'error');
+        return;
+      }
+
+      const colors = ['bg-mdjlo-navy', 'bg-emerald-700', 'bg-amber-700', 'bg-indigo-800', 'bg-slate-700'];
+      if (id) {
+        const idx = appState.interns.findIndex(i => i.id === id);
+        if (idx !== -1) {
+          appState.interns[idx] = { ...appState.interns[idx], dni, name, institution, career, area, shiftLabel, startTime, endTime, faceEnrolled: appState.modalEnrollmentState.face, fpEnrolled: appState.modalEnrollmentState.fp };
+          showToast('Practicante actualizado', 'success');
+        }
+      } else {
+        const newI = {
+          id: 'MDJLO-' + Date.now(), dni, name, institution, career, area, shiftLabel, startTime, endTime,
+          faceEnrolled: appState.modalEnrollmentState.face, fpEnrolled: appState.modalEnrollmentState.fp,
+          avatarColor: colors[appState.interns.length % colors.length]
+        };
+        appState.interns.push(newI);
+        appState.selectedInternId = newI.id;
+        showToast('Practicante registrado', 'success');
+      }
+      saveAppState();
+      closeInternModal();
+      refreshAdminDashboard();
+      renderTerminalInternSelector();
+    }
+
+    function confirmDeleteIntern(id) {
+      const intern = appState.interns.find(i => i.id === id);
+      if (!intern) return;
+      openCustomDialog(
+        'Eliminar practicante',
+        `¿Dar de baja a ${intern.name} (DNI ${intern.dni})? El historial de marcaciones se conserva.`,
+        () => {
+          appState.interns = appState.interns.filter(i => i.id !== id);
+          if (appState.selectedInternId === id) appState.selectedInternId = appState.interns[0]?.id || null;
+          saveAppState();
+          refreshAdminDashboard();
+          renderTerminalInternSelector();
+          showToast('Practicante eliminado del padrón', 'info');
+        }
+      );
+    }
+
+    function loadSettingsForm() {
+      const sede = document.getElementById('setting-sede-name');
+      const tol = document.getElementById('setting-tolerance-minutes');
+      if (sede) sede.value = appState.settings.sedeName;
+      if (tol) tol.value = appState.settings.toleranceMinutes;
+    }
+
+    function saveSystemSettings() {
+      const sede = document.getElementById('setting-sede-name').value.trim();
+      const tol = parseInt(document.getElementById('setting-tolerance-minutes').value, 10);
+      if (sede) appState.settings.sedeName = sede;
+      if (!isNaN(tol) && tol >= 0 && tol <= 120) appState.settings.toleranceMinutes = tol;
+      saveAppState();
+      updateAdminKPIs();
+      showToast('Configuración guardada', 'success');
+    }
+
+    function confirmResetDemoData() {
+      openCustomDialog(
+        'Restaurar datos de prueba',
+        'Se restablecerá el padrón y el historial de ejemplo. ¿Continuar?',
+        () => {
+          localStorage.removeItem(STORAGE_KEYS.INTERNS);
+          localStorage.removeItem(STORAGE_KEYS.LOGS);
+          localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+          appState.selectedInternId = null;
+          loadAppState();
+          refreshAdminDashboard();
+          renderTerminalInternSelector();
+          showToast('Datos restaurados', 'success');
+        }
+      );
+    }
+
+    function openCustomDialog(title, message, onConfirm) {
+      document.getElementById('dialog-title').textContent = title;
+      document.getElementById('dialog-message').textContent = message;
+      const btn = document.getElementById('dialog-confirm-btn');
+      const next = btn.cloneNode(true);
+      btn.parentNode.replaceChild(next, btn);
+      next.addEventListener('click', () => {
+        closeCustomDialog();
+        if (typeof onConfirm === 'function') onConfirm();
+      });
+      document.getElementById('custom-dialog-modal').classList.remove('hidden');
+    }
+
+    function closeCustomDialog() {
+      document.getElementById('custom-dialog-modal').classList.add('hidden');
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const styles = {
+        success: 'bg-slate-900 border-emerald-500 text-white',
+        error: 'bg-slate-900 border-rose-500 text-white',
+        warning: 'bg-slate-900 border-amber-500 text-white',
+        info: 'bg-slate-900 border-slate-500 text-white'
+      };
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        error: 'fa-circle-xmark text-rose-400',
+        warning: 'fa-triangle-exclamation text-amber-400',
+        info: 'fa-circle-info text-slate-300'
+      };
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-3 py-2.5 rounded-lg border-l-4 shadow-lg text-xs font-medium ${styles[type] || styles.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setupDynamicPWAManifest();
+      loadAppState();
+      startLivePeruClock();
+      updateVoiceButtonUI();
+      renderTerminalInternSelector();
+      refreshAdminDashboard();
+    });
+  </script>
+</body>
+</html>
